@@ -1,0 +1,26 @@
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - log-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9090/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  worker:
+    build: .
+    restart: unless-stopped
+    command: ["python", "-m", "log_exporter.worker"]
+    env_file: .env
+    volumes:
+      - log-data:/data
+    depends_on:
+      web:
+        condition: service_healthy
+volumes:
+  log-data:
