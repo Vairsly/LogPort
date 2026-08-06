@@ -10,7 +10,125 @@ LogPort 是一个集中式 Docker 日志导出服务。管理员在浏览器中�
 4. 浏览器访问 `http://127.0.0.1:9090`，首次启动自动创建管理员。
 5. 生产环境由 Nginx 或 Caddy 反向代理并启用 HTTPS，同时设置 `COOKIE_SECURE=true`。
 
-服务默认仅绑定宿主机回环地址。Web 和 Worker 共享 `log-data` 数据卷，其中包含 SQLite 数据库与导出文件。
+服务默认仅绑定宿主机回环地址。Compose 模式下 Web 和 Worker 共享 `log-data` 数据卷，其中包含 SQLite 数据库与导出文件。
+
+## Docker 命令行启动
+
+不使用 Docker Compose 时，先构建镜像，并创建 Web 与 Worker 共用的宿主机数据目录。镜像使用 UID `10001` 运行，需要确保该用户可以写入目录：
+
+```bash
+docker build -t log-server:latest .
+sudo mkdir -p /opt/logport-data/exports
+sudo chown -R 10001:10001 /opt/logport-data
+```
+
+使用一个容器同时启动 Web 和 Worker：
+
+```bash
+docker run -d \
+  --name log-server \
+  --restart unless-stopped \
+  --env-file .env \
+  -p 127.0.0.1:9090:9090 \
+  -v /opt/logport-data:/data \
+  --health-cmd='python -c "import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:9090/api/health\")"' \
+  --health-interval=30s \
+  --health-timeout=5s \
+  --health-retries=3 \
+  log-server:latest \
+  python -m log_exporter.run_all
+```
+
+此模式下，任一进程异常退出都会停止容器，并由 `--restart unless-stopped` 重新启动。修改代码后需要先重新执行 `docker build -t log-server:latest .`。
+
+如果希望 Web 和 Worker 相互隔离，也可以分别启动两个容器：
+
+启动 Web 服务：
+
+```bash
+docker run -d \
+  --name log-server-web \
+  --restart unless-stopped \
+  --env-file .env \
+  -p 127.0.0.1:9090:9090 \
+  -v /opt/logport-data:/data \
+  --health-cmd='python -c "import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:9090/api/health\")"' \
+  --health-interval=30s \
+  --health-timeout=5s \
+  --health-retries=3 \
+  log-server:latest
+```
+
+启动 Worker：
+
+```bash
+docker run -d \
+  --name log-server-worker \
+  --restart unless-stopped \
+  --env-file .env \
+  -v /opt/logport-data:/data \
+  log-server:latest \
+  python -m log_exporter.worker
+```
+
+查看状态和日志：
+
+```bash
+docker ps --filter name=log-server
+docker logs -f log-server-web
+docker logs -f log-server-worker
+```
+
+单容器模式停止并删除容器：
+
+```bash
+docker rm -f log-server
+```
+
+双容器模式停止并删除容器：
+
+```bash
+docker rm -f log-server-web log-server-worker
+```
+
+两种模式的数据都会保留在宿主机的 `/opt/logport-data` 目录中。
+
+## 离线部署
+
+在构建机器上导出镜像并生成校验文件：
+
+```bash
+docker save -o log-server-latest.tar log-server:latest
+sha256sum log-server-latest.tar > log-server-latest.tar.sha256
+```
+
+将 `log-server-latest.tar`、`log-server-latest.tar.sha256` 和单独配置好的 `.env` 安全复制到目标机器。`.env` 含有密钥，不包含在镜像包中，也不应通过公开渠道传输。
+
+目标机器需要使用 Linux/amd64 并已安装 Docker。进入文件所在目录，校验并导入镜像：
+
+```bash
+sha256sum -c log-server-latest.tar.sha256
+docker load -i log-server-latest.tar
+```
+
+创建持久化目录并使用一个容器同时启动 Web 和 Worker：
+
+```bash
+sudo mkdir -p /opt/logport-data/exports
+sudo chown -R 10001:10001 /opt/logport-data
+docker run -d \
+  --name log-server \
+  --restart unless-stopped \
+  --env-file .env \
+  -p 127.0.0.1:9090:9090 \
+  -v /opt/logport-data:/data \
+  --health-cmd='python -c "import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:9090/api/health\")"' \
+  --health-interval=30s \
+  --health-timeout=5s \
+  --health-retries=3 \
+  log-server:latest \
+  python -m log_exporter.run_all
+```
 
 ## 使用流程
 
