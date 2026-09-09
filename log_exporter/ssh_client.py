@@ -61,11 +61,13 @@ def test_server(server):
         client.close()
 
 
-def export_logs(server, container, start, end, output_file, timeout=1800):
+def build_export_command(container, start, end):
+    return "docker logs --timestamps --since {} --until {} {} 2>&1".format(shlex.quote(start), shlex.quote(end), shlex.quote(container))
+
+
+def export_logs(server, container, start, end, output_file, timeout=7200):
     client, _ = connect(server)
-    command = "docker logs --timestamps --since {} --until {} {} 2>&1".format(
-        shlex.quote(start), shlex.quote(end), shlex.quote(container)
-    )
+    command = build_export_command(container, start, end)
     try:
         _, stdout, _ = client.exec_command(command, timeout=15)
         channel = stdout.channel

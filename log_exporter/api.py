@@ -7,7 +7,7 @@ from flask import Blueprint, current_app, jsonify, request, send_file
 
 from .db import get_db, utcnow
 from .security import encrypt_secret, parse_containers, require_csrf, require_login
-from .ssh_client import test_server
+from .ssh_client import build_export_command, test_server
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -132,8 +132,9 @@ def create_task():
             raise ValueError("结束时间不能晚于当前时间")
         if end - start > timedelta(hours=current_app.config["MAX_EXPORT_HOURS"]):
             raise ValueError("单次导出最多 24 小时")
-        cursor = get_db().execute("INSERT INTO export_tasks(server_id,server_name,container,start_time,end_time,status,created_at) VALUES(?,?,?,?,?,'queued',?)",
-            (server_id, server["name"], container, start.isoformat(), end.isoformat(), utcnow()))
+        start_time, end_time = start.isoformat(), end.isoformat()
+        cursor = get_db().execute("INSERT INTO export_tasks(server_id,server_name,container,start_time,end_time,export_command,status,created_at) VALUES(?,?,?,?,?,?,'queued',?)",
+            (server_id, server["name"], container, start_time, end_time, build_export_command(container, start_time, end_time), utcnow()))
         return jsonify(id=cursor.lastrowid, status="queued"), 201
     except (ValueError, TypeError) as exc:
         return jsonify(error=str(exc)), 400

@@ -38,7 +38,10 @@ def test_task_time_and_allowlist_validation(app, client, auth):
     server_id = add_server(app)
     now = datetime.now(timezone.utc)
     valid = {"server_id": server_id, "container": "api", "start": (now - timedelta(minutes=30)).isoformat(), "end": now.isoformat()}
-    assert client.post("/api/export-tasks", headers=headers(auth), json=valid).status_code == 201
+    response = client.post("/api/export-tasks", headers=headers(auth), json=valid)
+    assert response.status_code == 201
+    task = client.get(f"/api/export-tasks/{response.get_json()['id']}").get_json()
+    assert task["export_command"] == f"docker logs --timestamps --since {valid['start']} --until {valid['end']} api 2>&1"
     assert client.post("/api/export-tasks", headers=headers(auth), json=valid | {"container": "other"}).status_code == 400
     assert client.post("/api/export-tasks", headers=headers(auth), json=valid | {"start": (now - timedelta(hours=25)).isoformat()}).status_code == 400
     assert client.post("/api/export-tasks", headers=headers(auth), json=valid | {"end": (now + timedelta(hours=1)).isoformat()}).status_code == 400

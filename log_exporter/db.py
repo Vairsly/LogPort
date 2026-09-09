@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS servers (
 );
 CREATE TABLE IF NOT EXISTS export_tasks (
  id INTEGER PRIMARY KEY, server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE RESTRICT,
- server_name TEXT NOT NULL, container TEXT NOT NULL, start_time TEXT NOT NULL, end_time TEXT NOT NULL,
+ server_name TEXT NOT NULL, container TEXT NOT NULL, start_time TEXT NOT NULL, end_time TEXT NOT NULL, export_command TEXT,
  status TEXT NOT NULL CHECK(status IN ('queued','running','succeeded','failed','expired','cancelled')),
  file_path TEXT, file_size INTEGER, error TEXT, created_at TEXT NOT NULL, started_at TEXT,
  finished_at TEXT, expires_at TEXT, worker_id TEXT
@@ -48,6 +48,7 @@ def close_db(_error=None):
 def init_db():
     db = get_db()
     db.executescript(SCHEMA)
+    if "export_command" not in {row["name"] for row in db.execute("PRAGMA table_info(export_tasks)")}: db.execute("ALTER TABLE export_tasks ADD COLUMN export_command TEXT")
     username = current_app.config["ADMIN_USERNAME"]
     password = current_app.config["ADMIN_PASSWORD"]
     if password and not db.execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone():
