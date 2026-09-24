@@ -5,7 +5,7 @@ import secrets
 from functools import wraps
 
 from cryptography.fernet import Fernet, InvalidToken
-from flask import current_app, jsonify, redirect, request, session, url_for
+from flask import current_app, jsonify, request, session
 
 
 def _fernet():
@@ -40,7 +40,7 @@ def require_login(api=True):
         @wraps(func)
         def wrapped(*args, **kwargs):
             if not session.get("user_id"):
-                return (jsonify(error="请先登录"), 401) if api else redirect(url_for("views.login_page"))
+                return (jsonify(error="请先登录"), 401) if api else (jsonify(error="请先登录"), 401)
             return func(*args, **kwargs)
         return wrapped
     return decorator

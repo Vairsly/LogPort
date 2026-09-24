@@ -16,6 +16,7 @@ def app(tmp_path):
         "CREDENTIAL_KEY": key,
         "ADMIN_USERNAME": "admin",
         "ADMIN_PASSWORD": "secret-password",
+        "FRONTEND_DIST": str(tmp_path / "dist"),
     })
     return app
 

@@ -56,3 +56,7 @@ def test_download_rejects_path_outside_export_dir(app, client, auth, tmp_path):
         task_id = cursor.lastrowid
     (tmp_path / "outside.log").write_text("secret")
     assert client.get(f"/api/export-tasks/{task_id}/download").status_code == 404
+
+
+def test_health(client):
+    assert client.get("/api/health").status_code == 200

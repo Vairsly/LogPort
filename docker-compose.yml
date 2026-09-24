@@ -15,6 +15,7 @@ services:
   worker:
     build: .
     restart: unless-stopped
+    working_dir: /app/backend
     command: ["python", "-m", "log_exporter.worker"]
     env_file: .env
     volumes:

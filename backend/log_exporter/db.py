@@ -48,7 +48,8 @@ def close_db(_error=None):
 def init_db():
     db = get_db()
     db.executescript(SCHEMA)
-    if "export_command" not in {row["name"] for row in db.execute("PRAGMA table_info(export_tasks)")}: db.execute("ALTER TABLE export_tasks ADD COLUMN export_command TEXT")
+    if "export_command" not in {row["name"] for row in db.execute("PRAGMA table_info(export_tasks)")}:
+        db.execute("ALTER TABLE export_tasks ADD COLUMN export_command TEXT")
     username = current_app.config["ADMIN_USERNAME"]
     password = current_app.config["ADMIN_PASSWORD"]
     if password and not db.execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone():
