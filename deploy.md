@@ -179,6 +179,16 @@ npm run dev
 ./dev.sh build   # 产出 frontend/dist
 ```
 
+### Python 缺少 _sqlite3
+
+若报 `ModuleNotFoundError: No module named '_sqlite3'`，说明 `/usr/local` 下的自编译 Python 未启用 sqlite：
+
+```bash
+./scripts/rebuild-python-sqlite.sh
+```
+
+该脚本会安装 `libsqlite3-dev` 等编译依赖，重编并安装 CPython 3.12 到 `/usr/local`，再重建 `backend/.venv`。
+
 ## 9. 运维注意
 
 - SQLite 仅适合单机；不要把数据卷同时挂到多台宿主机。

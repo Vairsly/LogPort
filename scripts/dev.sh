@@ -95,9 +95,20 @@ prepare_dirs() {
   mkdir -p "$DATA_DIR/exports" "$LOG_DIR" "$RUN_DIR"
 }
 
+check_sqlite() {
+  local bin="${1:-python3}"
+  if ! "$bin" -c 'import sqlite3' 2>/dev/null; then
+    error "当前 Python 缺少 _sqlite3 模块（import sqlite3 失败）"
+    error "  → 编译时未启用 sqlite，可执行: ./scripts/rebuild-python-sqlite.sh"
+    error "  → 或改用系统 Python: sudo apt-get install -y python3 python3-venv libsqlite3-dev"
+    die "请先修复 Python 的 sqlite3 支持"
+  fi
+}
+
 setup() {
   need_cmd python3
   need_cmd npm
+  check_sqlite python3
 
   info "准备 Python 虚拟环境…"
   if [[ ! -x "$PY" ]]; then

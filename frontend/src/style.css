@@ -405,6 +405,10 @@ dialog::backdrop {
   gap: 8px;
 }
 
+.sidebar .logout {
+  margin-top: auto;
+}
+
 .content {
   margin-left: 230px;
   padding: 35px;
@@ -437,9 +441,8 @@ dialog::backdrop {
   }
 
   .sidebar .logout {
-    position: absolute;
-    right: 14px;
-    top: 14px;
+    margin-top: 12px;
+    width: 100%;
   }
 
   .content {
