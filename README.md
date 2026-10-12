@@ -7,7 +7,7 @@ LogPort 是集中式 Docker 日志导出服务。管理员在浏览器选择服�
 ```text
 frontend/   Vue 3 + Vite 单页应用
 backend/    Flask API、Worker、测试
-doc/        设计文档（架构 / API / 前端）
+doc/        设计文档（架构 / API / 前端 / 版本发布）
 deploy.md   部署文档
 ```
 
@@ -49,6 +49,7 @@ cp .env.example .env
 | [doc/design.md](doc/design.md) | 总体架构、模块、安全与扩展 |
 | [doc/api.md](doc/api.md) | REST 接口说明 |
 | [doc/frontend.md](doc/frontend.md) | 前端设计与开发 |
+| [doc/RELEASE.md](doc/RELEASE.md) | 版本发布记录 |
 | [deploy.md](deploy.md) | 部署、配置、运维 |
 
 ## 使用流程
